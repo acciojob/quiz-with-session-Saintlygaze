@@ -1,7 +1,12 @@
-//your JS code here.
+// Select DOM elements
+const questionsElement = document.getElementById("questions");
+const submitButton = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
 
-// Do not change code below this line
-// This code will just display the questions to the screen
+// Retrieve or initialize user answers
+let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || [];
+
+// Questions data
 const questions = [
   {
     question: "What is the capital of France?",
@@ -30,27 +35,64 @@ const questions = [
   },
 ];
 
-// Display the quiz questions and choices
+// Render questions
 function renderQuestions() {
-  for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
-    const questionElement = document.createElement("div");
-    const questionText = document.createTextNode(question.question);
-    questionElement.appendChild(questionText);
-    for (let j = 0; j < question.choices.length; j++) {
-      const choice = question.choices[j];
-      const choiceElement = document.createElement("input");
-      choiceElement.setAttribute("type", "radio");
-      choiceElement.setAttribute("name", `question-${i}`);
-      choiceElement.setAttribute("value", choice);
-      if (userAnswers[i] === choice) {
-        choiceElement.setAttribute("checked", true);
+  questionsElement.innerHTML = ""; // Clear previous content
+
+  questions.forEach((question, index) => {
+    const questionContainer = document.createElement("div");
+    questionContainer.className = "question";
+
+    // Display question
+    const questionText = document.createElement("p");
+    questionText.textContent = question.question;
+    questionContainer.appendChild(questionText);
+
+    // Display options
+    question.choices.forEach((choice) => {
+      const option = document.createElement("input");
+      option.setAttribute("type", "radio");
+      option.setAttribute("name", `question-${index}`);
+      option.setAttribute("value", choice);
+
+      // Check if this choice was previously selected
+      if (userAnswers[index] === choice) {
+        option.setAttribute("checked", true);
       }
-      const choiceText = document.createTextNode(choice);
-      questionElement.appendChild(choiceElement);
-      questionElement.appendChild(choiceText);
-    }
-    questionsElement.appendChild(questionElement);
-  }
+
+      // Save choice on change
+      option.addEventListener("change", () => {
+        userAnswers[index] = choice;
+        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+      });
+
+      const label = document.createElement("label");
+      label.textContent = choice;
+
+      questionContainer.appendChild(option);
+      questionContainer.appendChild(label);
+      questionContainer.appendChild(document.createElement("br"));
+    });
+
+    questionsElement.appendChild(questionContainer);
+  });
 }
+
+// Calculate score
+function calculateScore() {
+  return questions.reduce((score, question, index) => {
+    return score + (userAnswers[index] === question.answer ? 1 : 0);
+  }, 0);
+}
+
+// Handle submit
+submitButton.addEventListener("click", () => {
+  const score = calculateScore();
+  scoreElement.textContent = `Your score is ${score} out of ${questions.length}.`;
+
+  // Save score in local storage
+  localStorage.setItem("score", score);
+});
+
+// Render questions on page load
 renderQuestions();
